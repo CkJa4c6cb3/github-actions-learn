@@ -28,4 +28,7 @@ jobs:
           echo "リリースタグを確認しました: $tag"
   deploy:
     needs: require-release-tag
-    run: echo "Deploying to production environment..." # ここに実際のデプロイコマンドを追加
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy (test)
+        run: echo "Deploying to production environment..." # ここに実際のデプロイコマンドを追加
