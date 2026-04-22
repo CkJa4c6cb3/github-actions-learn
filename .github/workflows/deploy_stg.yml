@@ -1,34 +1,23 @@
 name: Deploy Md Promotion Linkage Lambda to Prod
 
 on:
-  pull_request:
-    types: [closed]
+  release:
+    types: [published] # リリースノートが公開された時に発火します
+
 jobs:
-  require-release-tag:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'stg'
+  deploy:
+    # stgブランチをターゲットにして作成されたリリースの場合のみ実行したい場合は、以下のif文のコメントアウトを外してください
+    # if: github.event.release.target_commitish == 'stg'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout with tags
-        uses: actions/checkout@v6
+      - name: Checkout
+        # 注意: actions/checkout の最新は v4 です（v6はまだ存在しません）
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: タグがマージコミットにつけられていることを確認
-        id: ensure-tag
+
+      - name: Check Tag and Deploy
         run: |
-          merge_commit=${{ github.event.pull_request.merge_commit_sha }}
-          if [ -z "$merge_commit" ]; then
-            echo "マージコミットが取得できません。"
-            exit 1
-          fi
-          tag=$(git tag --points-at "$merge_commit" | head -n 1)
-          if [ -z "$tag" ]; then
-            echo "ERROR: refs/heads/${{ github.event.pull_request.base.ref }} にマージされたコミットにタグが存在しません。"
-            exit 1
-          fi
-          echo "リリースタグを確認しました: $tag"
-  deploy:
-    needs: require-release-tag
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy (test)
-        run: echo "Deploying to production environment..." # ここに実際のデプロイコマンドを追加
+          echo "リリースタグを確認しました: ${{ github.event.release.tag_name }}"
+          echo "Deploying to production environment..." 
+          # ここに実際のデプロイコマンドを追加
