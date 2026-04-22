@@ -1,0 +1,22 @@
+name: Deploy to Stg
+
+on:
+  pull_request:
+    types: [closed] # Pull Request がクローズされたときに実行する
+
+jobs:
+  check_merge_method:
+    name: Check Merge Method
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Squash Merge Prohibition
+        uses: ./.github/actions/check-merge-method
+        with:
+          banned_branches: "stg,prod" # Squash & Merge を禁止するブランチを指定
+  deploy:
+    # Pull Request がマージされたとき、かつ、マージ先のブランチが stg のときに実行する
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'stg'
+    name: Deploy to Stg
+    runs-on: ubuntu-latest
+    echo: "Deploying to Stg environment..."

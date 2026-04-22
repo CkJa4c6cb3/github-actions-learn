@@ -1,4 +1,4 @@
-name: "Reject Squash Merge"
+name: "Check Merge Method"
 description: |
   指定したマージ先ブランチに対して Squash & Merge でのマージを禁止します。
   # 利用方法例:
