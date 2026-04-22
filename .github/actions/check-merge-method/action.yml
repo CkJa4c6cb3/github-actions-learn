@@ -1,0 +1,46 @@
+name: "Reject Squash Merge"
+description: |
+  指定したマージ先ブランチに対して Squash & Merge でのマージを禁止します。
+  # 利用方法例:
+  # - name: Squash Merge 禁止チェック
+  #   uses: ./.github/actions/reject-squash
+  #   with:
+  #     banned_branches: "stg,prod" # カンマ区切りで指定（デフォルト: stg,prod）
+
+inputs:
+  banned_branches:
+    description: "Squash & Merge を禁止するマージ先ブランチ（カンマ区切り）"
+    required: false
+    default: "stg,prod"
+
+runs:
+  using: "composite"
+  steps:
+    - id: check
+      shell: bash
+      run: |
+        set -eu
+
+        banned_branches="${{ inputs.banned_branches }}"
+        base_ref="${{ github.base_ref }}"
+        merge_method="${{ github.event.pull_request.merge_method }}"
+
+        IFS=',' read -r -a branch_array <<< "$banned_branches"
+
+        # マージ先ブランチが禁止リストに含まれているかチェック
+        is_banned=false
+        for branch in "${branch_array[@]}"; do
+          branch=$(echo "$branch" | xargs)
+          if [ "$branch" = "$base_ref" ]; then
+            is_banned=true
+            break
+          fi
+        done
+
+        # 禁止リストに含まれるブランチ & Squash の場合はエラー
+        if [ "$is_banned" = true ] && [ "$merge_method" = "squash" ]; then
+          echo "::error::${base_ref} への Squash & Merge は許可されていません。"
+          exit 1
+        fi
+
+        echo "squish and merge禁止チェックを通過しました。マージ先: ${base_ref}, マージ方法: ${merge_method}"
