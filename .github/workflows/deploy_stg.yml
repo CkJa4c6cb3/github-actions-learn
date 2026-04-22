@@ -19,4 +19,7 @@ jobs:
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'stg'
     name: Deploy to Stg
     runs-on: ubuntu-latest
-    echo: "Deploying to Stg environment..."
+    needs: check_merge_method
+    steps:
+      - name: Deploy placeholder
+        run: echo "Deploying to Stg environment..."
