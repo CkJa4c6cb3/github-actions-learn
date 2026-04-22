@@ -1,27 +1,31 @@
-name: Deploy to Stg
+name: Deploy Md Promotion Linkage Lambda to Prod
 
 on:
   pull_request:
-    types: [closed] # Pull Request がクローズされたときに実行する
-
+    types: [closed]
 jobs:
-  check_merge_method:
-    name: Check Merge Method
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-      - name: Check Squash Merge Prohibition
-        uses: ./.github/actions/check-merge-method
-        with:
-          banned_branches: "stg,prod" # Squash & Merge を禁止するブランチを指定
-  deploy:
-    # Pull Request がマージされたとき、かつ、マージ先のブランチが stg のときに実行する
+  require-release-tag:
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'stg'
-    name: Deploy to Stg
     runs-on: ubuntu-latest
-    needs: check_merge_method
     steps:
-      - name: Deploy placeholder
-        run: echo "Deploying to Stg environment..."
+      - name: Checkout with tags
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: タグがマージコミットにつけられていることを確認
+        id: ensure-tag
+        run: |
+          merge_commit=${{ github.event.pull_request.merge_commit_sha }}
+          if [ -z "$merge_commit" ]; then
+            echo "マージコミットが取得できません。"
+            exit 1
+          fi
+          tag=$(git tag --points-at "$merge_commit" | head -n 1)
+          if [ -z "$tag" ]; then
+            echo "ERROR: refs/heads/${{ github.event.pull_request.base.ref }} にマージされたコミットにタグが存在しません。"
+            exit 1
+          fi
+          echo "リリースタグを確認しました: $tag"
+  deploy:
+    needs: require-release-tag
+    run: echo "Deploying to production environment..." # ここに実際のデプロイコマンドを追加
